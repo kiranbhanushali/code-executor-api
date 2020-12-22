@@ -24,12 +24,10 @@ async function  execute( command ) {
         console.log(`stdout: ${stdout}`);
     });
 }
-/* GET home page. */
-router.post('/solution/:id' ,async function ( req , res , next ) {
-    console.log( req.body.code ) ;
+async function runCpp(code){
     var filename = cuid.slug();
-	var path = './temp/';
-    await fsPromises.writeFile(path + filename +'.cpp' , req.body.code, function (err) {
+    var path = './temp/';
+    await fsPromises.writeFile(path + filename +'.cpp' , code, function (err) {
         if (err) throw err;
         console.log('Saved!');
     });
@@ -39,7 +37,36 @@ router.post('/solution/:id' ,async function ( req , res , next ) {
     await sleep( 1400);
     await fsPromises.chmod(executeCommand, 0o777 )
     await execute(executeCommand);
-    res.send("received your response") ;
+
+}
+async function runPy(code){
+    var filename = cuid.slug();
+    var path = './temp/';
+    await fsPromises.writeFile(path + filename +'.py' , code, function (err) {
+        if (err) throw err;
+        console.log('Saved!');
+    });
+    commmand = 'python ' + path + filename +'.py'
+    await execute(commmand);
+
+}
+
+
+/* GET home page. */
+router.post('/solution/:id' ,async function ( req , res , next ) {
+    switch ( req.body.language ) {
+        case "cpp":
+            runCpp( req.body.code ) ;
+            break;
+        case "c":
+            runCpp( req.body.code ) ;
+            break;
+        case "python":
+            runPy( req.body.code ) ;
+            break;
+    }
+
+   res.send("received your response") ;
    // execute("  echo `${req.body.code}` > t.cpp");
 
 });
