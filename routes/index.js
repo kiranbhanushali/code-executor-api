@@ -18,7 +18,7 @@ async function runPy( code ,res ) {
 
     // creating file 
 
-    await fsPromises.writeFile(path + filename +'.cpp' , code, function (err) {
+    await fsPromises.writeFile(path + filename +'.py' , code, function (err) {
         if (err) throw err;
         console.log('Saved!');
     });
