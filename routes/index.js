@@ -46,65 +46,35 @@ async function runPy(body, res) {
     })
 }
 
-async function runCpp(code, res) {
-    //file name
-    var filename = cuid.slug()
-    var path = './temp/'
+router.post('/testcase', async function (req, res) {
+    console.log(req.body)
+    // add file contain no of testcases
+    await fileWrite(req.body.code.toString(), req.body.input.length.toString())
+    // add input files
+    const input = req.body.input
 
-    //file create
-    await fsPromises.writeFile(path + filename + '.cpp', code, function (err) {
-        if (err) throw err
-        console.log('Saved!')
-    })
+    for (var i = 0; i < input.length; i++) {
+        await fileWrite(
+            'in/' + req.body.code.toString() + '_' + (i + 1),
+            req.body.input[i].toString()
+        )
+    }
 
-    //compile & execute  command
-    let command =
-        'g++ -Wall -g ' +
-        path +
-        filename +
-        '.cpp -o ' +
-        path +
-        filename +
-        '.out '
-    let executeCommand = path + filename + '.out'
+    // add output files
 
-    var response = {}
-    await exec(command, (error, stdout, stderr) => {
-        let r = {}
-        r['error'] = error
-        r['stderr'] = stderr
-        r['stdout'] = stdout
-        // console.log( "From the execute function");
-        // console.log(r);
-        response['compile'] = r
-    })
+    const output = req.body.output
+    for (var i = 0; i < output.length; i++) {
+        await fileWrite(
+            'out/' + req.body.code.toString() + '_' + (i + 1),
+            req.body.output[i].toString()
+        )
+    }
 
-    await sleep(1400) // for compiling purpose ( need to optimize)
-    await fsPromises.chmod(executeCommand, 0o777)
-    await exec(executeCommand, (error, stdout, stderr) => {
-        let r = {}
-        r['error'] = error
-        r['stderr'] = stderr
-        r['stdout'] = stdout
-        // console.log( "From the execute function");
-        // console.log(r);
-        response['exe'] = r
-        res.send(response)
-    })
-}
-
-router.post('/testcase', function (req, res) {
     res.send('Added Succesfully')
 })
 /* GET home page. */
 router.post('/solution/:id', async function (req, res) {
     switch (req.body.language) {
-        case 'cpp':
-            await runCpp(req.body.code, res)
-            break
-        case 'c':
-            await runCpp(req.body.code, res)
-            break
         case 'python':
             await runPy(req.body, res)
             break
