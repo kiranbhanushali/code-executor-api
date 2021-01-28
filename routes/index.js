@@ -1,4 +1,5 @@
 var express = require('express')
+var express = require('express')
 var router = express.Router()
 var fs = require('fs')
 const fsPromises = require('fs').promises
@@ -22,16 +23,12 @@ function fileWrite(filename, content) {
     })
 }
 
-async function runPy(body, res) {
+async function runCode(body, res) {
     // file name
     var filename = cuid.slug()
-    await fileWrite(filename + '.py', body.code)
-    var command =
-        'cd temp ; ./a.out ' +
-        body.problemcode +
-        ' ' +
-        filename +
-        '.py  ; cd ..'
+    await fileWrite(filename + '.' + body.language, body.code)
+    var command = 'cd temp ; ./a.out ' + body.problemcode + ' ' + filename + '.'
+    body.language + '  ; cd ..'
 
     console.log(command)
     await exec(command, (error, stdout, stderr) => {
@@ -46,38 +43,53 @@ async function runPy(body, res) {
     })
 }
 
-router.post('/testcase', async function (req, res) {
-    console.log(req.body)
+async function writeTestcase(code, input, output) {
     // add file contain no of testcases
-    await fileWrite(req.body.code.toString(), req.body.input.length.toString())
+    await fileWrite(code.toString(), input.length.toString())
     // add input files
-    const input = req.body.input
 
     for (var i = 0; i < input.length; i++) {
         await fileWrite(
-            'in/' + req.body.code.toString() + '_' + (i + 1),
-            req.body.input[i].toString()
+            'in/' + code.toString() + '_' + (i + 1),
+            input[i].toString()
         )
     }
 
     // add output files
 
-    const output = req.body.output
     for (var i = 0; i < output.length; i++) {
         await fileWrite(
-            'out/' + req.body.code.toString() + '_' + (i + 1),
-            req.body.output[i].toString()
+            'out/' + code.toString() + '_' + (i + 1),
+            output[i].toString()
         )
     }
-
-    res.send('Added Succesfully')
+}
+router.post('/testcase', async function (req, res) {
+    console.log(req.body)
+    await writeTestcase(req.body.code, req.body.input, req.body.output)
+    res.json('Added Succesfully')
 })
-/* GET home page. */
+
+router.get('/init-testcase', async function (req, res) {
+    await Problems.find().exec(async (err, problems) => {
+        for (var i = 0; i < problems.length; i++) {
+            await writeTestcase(
+                problems[i].code,
+                problems[i].input,
+                problems[i].output
+            )
+        }
+    })
+    res.json('Test case init succesfull ')
+})
+
 router.post('/solution/:id', async function (req, res) {
-    switch (req.body.language) {
-        case 'python':
-            await runPy(req.body, res)
-            break
+    const languages = ['py', 'c', 'cpp']
+
+    if (languages.includes(req.body.language)) {
+        await runCode(req.body, res)
+    } else {
+        res.json({ err: 'Language is not valid', success: false })
     }
 })
 router.get('/', function (req, res) {
