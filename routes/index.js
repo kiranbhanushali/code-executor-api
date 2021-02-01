@@ -27,8 +27,8 @@ async function runCode(body, res) {
     // file name
     var filename = cuid.slug()
     await fileWrite(filename + '.' + body.language, body.code)
-    var command = 'cd temp ; ./a.out ' + body.problemcode + ' ' + filename + '.'
-    body.language + '  ; cd ..'
+    var command = 'cd temp ; ./a.out ' + body.problemcode + ' ' + filename + '.'+
+    body.language + '  ; cd .. ;'
 
     console.log(command)
     await exec(command, (error, stdout, stderr) => {
@@ -71,7 +71,7 @@ router.post('/testcase', async function (req, res) {
 })
 
 router.get('/init-testcase', async function (req, res) {
-    await Problems.find().exec(async (err, problems) => {
+ const problems =     await Problems.find().exec(async (err, problems) => {
         for (var i = 0; i < problems.length; i++) {
             await writeTestcase(
                 problems[i].code,
@@ -79,8 +79,8 @@ router.get('/init-testcase', async function (req, res) {
                 problems[i].output
             )
         }
+	 res.json({msg:'Test case init succesfull ',problems})
     })
-    res.json('Test case init succesfull ')
 })
 
 router.post('/solution/:id', async function (req, res) {
